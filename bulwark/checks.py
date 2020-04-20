@@ -491,8 +491,10 @@ def multi_check(df, checks, *more_checks, warn=False):
         warn (bool): Indicates whether an error should be raised
                      or only a warning notification should be displayed.
                      Default is to error.
+
     Returns:
         Original `df`.
+
     """
 
     checks_map = {}
