@@ -515,6 +515,52 @@ def test_multi_check():
     # with pytest.raises(AssertionError):
 
 
+def test_multi_check_varargs():
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    result = ck.multi_check(df, ck.has_no_nans, warn=False)
+    tm.assert_frame_equal(df, result)
+
+    result = ck.multi_check(df,
+                            ck.has_no_nans,
+                            {ck.is_shape: {"shape": (3, 2)}},
+                            warn=False)
+    tm.assert_frame_equal(df, result)
+
+    result = dc.MultiCheck(ck.has_no_nans,
+                           {ck.is_shape: {"shape": (3, 2)}},
+                           warn=False)(_noop)(df)
+    tm.assert_frame_equal(df, result)
+
+    def total_sum_not_equal(df, amt):
+        if amt == 51:
+            raise AssertionError("Test")
+        return True
+
+    result = ck.multi_check(df,
+                            ck.has_no_nans,
+                            {total_sum_not_equal: {"amt": 52}},
+                            warn=False)
+    tm.assert_frame_equal(df, result)
+
+    result = dc.MultiCheck(ck.has_no_nans,
+                           {total_sum_not_equal: {"amt": 52}},
+                           warn=False)(_noop)(df)
+    tm.assert_frame_equal(df, result)
+
+    result = dc.MultiCheck(ck.has_no_nans,
+                           {total_sum_not_equal: {"amt": 51}},
+                           {total_sum_not_equal: {"amt": 52}},  # last wins
+                           warn=False)(_noop)(df)
+    tm.assert_frame_equal(df, result)
+
+    with pytest.raises(AssertionError):
+        result = dc.MultiCheck(ck.has_no_nans,
+                               {total_sum_not_equal: {"amt": 51}},
+                               warn=False)(_noop)(df)
+
+    # with pytest.raises(AssertionError):
+
+
 def test_custom_check():
     def f(df, length):
         if len(df) <= length:

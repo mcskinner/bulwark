@@ -7,6 +7,7 @@ Each function in this module should:
 - return the original, unaltered pd.DataFrame
 
 """
+import collections
 import warnings
 
 import numpy as np
@@ -477,22 +478,32 @@ def is_same_as(df, df_to_compare, **kwargs):
     return df
 
 
-def multi_check(df, checks, warn=False):
+def multi_check(df, checks, *more_checks, warn=False):
     """Asserts that all checks pass.
-
     Args:
         df (pd.DataFrame): Any pd.DataFrame.
-        checks (dict): Mapping of check functions to parameters for those check functions.
+        checks: A single function specification, as below.
+                This exists for backwards compatibility, and to ensure there's at least one check.
+        more_checks: Any number of check function specifications.
+                     The simplest specification is a check function, which assumes no parameters.
+                     Or it may be a Mapping of check functions to parameters for those functions.
+                     In the event of duplicates, the last specification will win.
         warn (bool): Indicates whether an error should be raised
                      or only a warning notification should be displayed.
                      Default is to error.
-
     Returns:
         Original `df`.
-
     """
+
+    checks_map = {}
+    for check in [checks, *more_checks]:
+        if isinstance(check, collections.Mapping):
+            checks_map.update(check)
+        else:
+            checks_map[check] = {}
+
     error_msgs = []
-    for func, params in checks.items():
+    for func, params in checks_map.items():
         try:
             func(df, **params)
         except AssertionError as e:

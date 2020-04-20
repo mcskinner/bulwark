@@ -45,6 +45,33 @@ for func in check_functions:
     setattr(this_module, decorator_name, decorator_factory(decorator_name, func))
 
 
+class MultiCheck:
+    """
+    Notes:
+        - This code is purposefully located below the auto-generation of decorators,
+          so this overwrites the auto-generated MultiCheck.
+        - `MultiCheck`'s __init__ diverges from `BaseDecorator`, due to the use of *args.
+
+    TODO: Work this into BaseDecorator?
+
+    """
+
+    def __init__(self, checks, *more_checks, warn=False, enabled=True):
+        self.checks = checks
+        self.more_checks = more_checks
+        self.warn = warn
+        self.enabled = enabled
+
+    def __call__(self, f):
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            df = f(*args, **kwargs)
+            if self.enabled:
+                ck.multi_check(df, self.checks, *self.more_checks, warn=self.warn)
+            return df
+        return decorated
+
+
 class CustomCheck:
     """
     Notes:
